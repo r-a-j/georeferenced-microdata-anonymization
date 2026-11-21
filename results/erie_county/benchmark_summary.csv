@@ -1,0 +1,11 @@
+region,method,target_k,env_matched,pct_achieving_k,min_realized_k,median_realized_k,max_realized_k,pct_valid_residential,pct_env_preserved,mean_disp_m,median_disp_m,max_disp_m,median_net_disp_m,pct_hotelling_sig,pct_rayleigh_sig,ripley_l_rmse_m,ripley_l_rmse_1km_m,cluster_true_bg_size,cluster_mean_in,cluster_mean_outside,cluster_mean_jaccard
+erie_county,Random Perturbation (r=500m),100,False,78.8,14,552,1771,46.6,94.7,336.4,356.2,500.0,45.2,4.4,5.6,115.8,200.0,9,6.98,1.22,0.71
+erie_county,Random Perturbation (r=905m),100,False,93.1,40,1580,4164,36.5,91.4,603.3,640.0,904.9,77.7,5.6,4.4,259.5,409.3,9,7.0,2.2,0.646
+erie_county,Donut Geomasking (k_min=100),100,True,100.0,122,963,6078,43.3,100.0,777.2,540.1,4056.6,88.5,26.9,23.8,272.0,372.6,9,5.1,10.22,0.246
+erie_county,"Verified Neighbor (All Residences, k=50)",50,False,100.0,50,50,50,100.0,96.0,149.3,95.0,984.1,36.2,65.6,61.2,20.0,33.9,9,8.26,0.06,0.916
+erie_county,"Verified Neighbor (All Residences, k=100)",100,False,100.0,100,100,100,100.0,94.2,216.1,128.5,1304.0,44.1,61.2,55.6,31.7,53.4,9,6.74,0.74,0.705
+erie_county,"Verified Neighbor (All Residences, k=200)",200,False,100.0,200,200,200,100.0,92.0,305.1,179.8,1806.4,60.6,61.9,60.6,37.8,58.6,9,5.72,2.6,0.495
+erie_county,"Verified Neighbor (All Residences, k=350)",350,False,100.0,350,350,350,100.0,89.5,406.1,242.2,2063.4,82.0,61.9,62.5,59.4,73.7,9,5.08,4.32,0.383
+erie_county,"Verified Neighbor (Env-Matched, k=50)",50,True,100.0,50,50,50,100.0,100.0,164.5,94.3,1906.3,34.1,65.0,63.1,20.9,26.8,9,7.24,1.2,0.729
+erie_county,"Verified Neighbor (Env-Matched, k=100)",100,True,100.0,100,100,100,100.0,100.0,238.2,125.6,2357.7,41.6,61.9,57.5,20.2,23.5,9,6.16,2.32,0.557
+erie_county,"Verified Neighbor (Env-Matched, k=200)",200,True,100.0,200,200,200,100.0,100.0,367.7,178.6,3647.4,64.6,55.0,55.6,57.7,41.0,9,7.04,4.24,0.554

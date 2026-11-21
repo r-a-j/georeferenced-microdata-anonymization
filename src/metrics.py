@@ -24,12 +24,9 @@ def compute_displacement_stats(
     subjects_xy: np.ndarray, surrogates: np.ndarray
 ) -> dict[str, float]:
     """Compute displacement distance, Hotelling's T^2 net shift, and Rayleigh bias."""
-    # vectors: (n_subj, n_rep, 2)
     diff = surrogates - subjects_xy[:, None, :]
     dists = np.hypot(diff[:, :, 0], diff[:, :, 1])
-
-    # Per-subject net mean-center shift across replicates
-    mean_vec = diff.mean(axis=1)  # (n_subj, 2)
+    mean_vec = diff.mean(axis=1)
     net_disp = np.hypot(mean_vec[:, 0], mean_vec[:, 1])
 
     n_subj, n_rep, _ = diff.shape
@@ -37,7 +34,6 @@ def compute_displacement_stats(
     rayleigh_sig = 0
 
     for i in range(n_subj):
-        # Hotelling's T^2 test for H0: E[diff_i] = (0, 0)
         d_i = diff[i]
         cov = np.cov(d_i.T, ddof=1)
         det = np.linalg.det(cov)
@@ -45,15 +41,11 @@ def compute_displacement_stats(
             inv_cov = np.linalg.inv(cov)
             t2 = n_rep * float(mean_vec[i] @ inv_cov @ mean_vec[i])
             f_stat = (n_rep - 2) / (2.0 * (n_rep - 1)) * t2
-            p_val = float(f_dist.sf(f_stat, 2, n_rep - 2))
-            if p_val < 0.05:
+            if float(f_dist.sf(f_stat, 2, n_rep - 2)) < 0.05:
                 hotelling_sig += 1
 
-        # Rayleigh test for directional uniformity of displacement vectors
         angles = np.arctan2(d_i[:, 1], d_i[:, 0])
-        c_sum = np.sum(np.cos(angles))
-        s_sum = np.sum(np.sin(angles))
-        r_bar = np.hypot(c_sum, s_sum) / n_rep
+        r_bar = np.hypot(np.sum(np.cos(angles)), np.sum(np.sin(angles))) / n_rep
         z = n_rep * (r_bar**2)
         p_ray = np.exp(-z) * (
             1.0
@@ -64,7 +56,6 @@ def compute_displacement_stats(
         if p_ray < 0.05:
             rayleigh_sig += 1
 
-    # Global mean center displacement across all subjects
     global_shift = float(
         np.hypot(
             surrogates[:, :, 0].mean() - subjects_xy[:, 0].mean(),
@@ -101,7 +92,6 @@ def ripley_l_centered(
     if n < 2:
         return np.zeros_like(radii, dtype=float)
     dists = pdist(points)
-    # Count ordered pairs within each radius r
     counts = np.array([(dists <= r).sum() * 2.0 for r in radii], dtype=float)
     k_vals = (area_m2 / (n * (n - 1))) * counts
     return np.sqrt(k_vals / np.pi) - radii
@@ -109,23 +99,17 @@ def ripley_l_centered(
 
 def kulldorff_poisson_scan(
     points_xy: np.ndarray,
-    block_groups: pd.DataFrame,
-    extent_m: float,
-    grid_n: int,
+    landscape: StudyLandscape,
     max_pop_fraction: float = 0.25,
 ) -> ClusterScanResult:
-    """Kulldorff purely spatial discrete Poisson scan statistic over block groups.
+    """Kulldorff purely spatial discrete Poisson scan statistic over UTM block groups."""
+    dx = (landscape.x_max - landscape.x_min) / landscape.grid_nx
+    dy = (landscape.y_max - landscape.y_min) / landscape.grid_ny
+    gx = np.clip(((points_xy[:, 0] - landscape.x_min) / dx).astype(int), 0, landscape.grid_nx - 1)
+    gy = np.clip(((points_xy[:, 1] - landscape.y_min) / dy).astype(int), 0, landscape.grid_ny - 1)
+    bg_ids = gy * landscape.grid_nx + gx
 
-    Mirrors the SaTScan discrete Poisson hotspot detector used in Richter (2018):
-    evaluates circular scanning windows centered at every block group up to
-    max_pop_fraction of total residential parcels and returns the primary cluster
-    maximizing the Poisson log-likelihood ratio (LLR).
-    """
-    cell_size = extent_m / grid_n
-    gx = np.clip((points_xy[:, 0] // cell_size).astype(int), 0, grid_n - 1)
-    gy = np.clip((points_xy[:, 1] // cell_size).astype(int), 0, grid_n - 1)
-    bg_ids = gy * grid_n + gx
-
+    block_groups = landscape.block_groups
     n_bg = len(block_groups)
     cases = np.bincount(bg_ids, minlength=n_bg).astype(float)
     pop = block_groups["res_count"].to_numpy(dtype=float)
@@ -134,7 +118,6 @@ def kulldorff_poisson_scan(
     total_cases = float(cases.sum())
     total_pop = float(pop.sum())
     max_pop = total_pop * max_pop_fraction
-
     dist_mat = squareform(pdist(centers))
 
     best_llr = -1.0
@@ -148,7 +131,6 @@ def kulldorff_poisson_scan(
         cum_pop = np.cumsum(pop[order])
         cum_cases = np.cumsum(cases[order])
 
-        # Group equal-distance ties so circular windows are exact
         for k_end in range(len(order)):
             if k_end + 1 < len(order) and np.isclose(
                 ordered_dists[k_end], ordered_dists[k_end + 1]
@@ -192,12 +174,11 @@ def evaluate_method(
 ) -> tuple[dict[str, object], np.ndarray, np.ndarray]:
     """Run full privacy + spatial utility evaluation for one geomasking method."""
     subj_xy = landscape.subjects[["x", "y"]].to_numpy()
-    area_m2 = landscape.extent_m**2
+    area_m2 = (landscape.x_max - landscape.x_min) * (landscape.y_max - landscape.y_min)
     n_rep = result.surrogates.shape[1]
 
     disp = compute_displacement_stats(subj_xy, result.surrogates)
 
-    # Ripley L(r) - r across all 50 replicates
     l_reps = np.zeros((n_rep, len(radii)), dtype=float)
     in_true_counts = np.zeros(n_rep, dtype=float)
     outside_counts = np.zeros(n_rep, dtype=float)
@@ -208,9 +189,7 @@ def evaluate_method(
         pts_rep = result.surrogates[:, rep, :]
         l_reps[rep] = ripley_l_centered(pts_rep, radii, area_m2)
 
-        scan = kulldorff_poisson_scan(
-            pts_rep, landscape.block_groups, landscape.extent_m, landscape.grid_n
-        )
+        scan = kulldorff_poisson_scan(pts_rep, landscape)
         for bg in scan.primary_block_groups:
             bg_hit_freq[bg] += 1
 
@@ -231,6 +210,7 @@ def evaluate_method(
     pct_achieving_k = 100.0 * float(np.mean(result.realized_k >= target_k))
 
     summary = {
+        "region": landscape.region_key,
         "method": result.method_name,
         "target_k": target_k,
         "env_matched": result.env_matched,
