@@ -2,7 +2,7 @@
 
 Python implementation and real-world OpenStreetMap benchmark of **Verified Neighbor geomasking** (Richter, 2018) compared against **Random Perturbation** and **Donut Geomasking** (Hampton et al., 2010), evaluated in exact metric UTM coordinates across **Dortmund, Germany (`EPSG:25832`)** with cross-region validation on **Erie County, NY (`EPSG:26918`)**.
 
-Originated as my M.Sc. Data Science seminar paper and talk (*Anonymization of Georeferenced Microdata*, Prof. Dr. Rainer Lenz, TU Dortmund University, Winter Term 2023/24) critically evaluating Wayne Richter's *JESEE* (2018) study, extended here into a reproducible Python geospatial benchmark (`scipy.spatial.cKDTree`, Ripley/Besag $L(r) - r$, Kulldorff discrete Poisson spatial scan, Hotelling's $T^2$, and Rayleigh circular tests) running directly on `179,006` real OpenStreetMap building centroids.
+M.Sc. Data Science seminar study (*Anonymization of Georeferenced Microdata*, Prof. Dr. Rainer Lenz, TU Dortmund University, Winter Term 2023/24) pairing a critical technical evaluation of Wayne Richter's *JESEE* (2018) framework with a reproducible Python geospatial benchmark (`scipy.spatial.cKDTree`, Ripley/Besag $L(r) - r$, Kulldorff discrete Poisson spatial scan, Hotelling's $T^2$, and Rayleigh circular tests) running directly on `179,006` real OpenStreetMap building centroids.
 
 ![Verified Neighbor winnowing and sparse outskirt comparison on real Dortmund OSM buildings](https://raw.githubusercontent.com/r-a-j/georeferenced-microdata-anonymization/main/figures/verified_neighbor_pipeline.png)
 
